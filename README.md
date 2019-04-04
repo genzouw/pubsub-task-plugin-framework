@@ -10,8 +10,11 @@ Cloud pub/sub を利用した並列分散型のタスク実行フレームワー
 + subscriber.go
 + lib/
    `- protocol.go
-+ plugins/
-   `- hello.go
++ samples/
+   |- sample-publisher-client.go
+   |- sample-subscriber-client.go
+   `- plugins
+        `- hello.go
 ```
 
 # How to use
