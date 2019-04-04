@@ -8,13 +8,8 @@ import (
 
   "cloud.google.com/go/pubsub"
   "github.com/dullgiulio/pingo"
+  "github.com/zenkigen/cloud-pubsub-utils/lib"
 )
-
-type Plugin struct {
-  Name string
-  Path string
-  Args map[string]string
-}
 
 func main() {
   proj := os.Getenv("GOOGLE_PROJECT_ID")
@@ -22,11 +17,11 @@ func main() {
     log.Printf("GOOGLE_PROJECT_ID is not set. ERR:[%v]", os.Stderr)
     os.Exit(1)
   }
-  plugin := Plugin{"HelloPlugin", "./plugins/hello", map[string]string{"name": "Yoshimo"}}
+  plugin := protocol.Plugin{"HelloPlugin", "./plugins/hello", map[string]string{"name": "Yoshimo"}}
   Do(proj, "test", &plugin)
 }
 
-func Do(proj string, topicName string, plugin *Plugin) {
+func Do(proj string, topicName string, plugin *protocol.Plugin) {
   ctx := context.Background()
   client, err := pubsub.NewClient(ctx, proj)
 
@@ -54,7 +49,6 @@ func createTopicIfNotExits(client *pubsub.Client, topicName string) (*pubsub.Top
   t := client.Topic(topicName)
   ok, err := t.Exists(ctx)
   if err != nil {
-    // TODO: エラー処理追加
     log.Printf("Error[createTopic]: %v", err)
     return nil, err
   }
@@ -63,7 +57,6 @@ func createTopicIfNotExits(client *pubsub.Client, topicName string) (*pubsub.Top
   }
   t, err = client.CreateTopic(ctx, topicName)
   if err != nil {
-    // TODO: エラー処理追加
     log.Printf("Error[createTopic]: %v", err)
     return nil, err
   }
@@ -76,7 +69,6 @@ func publish(client *pubsub.Client, topic *pubsub.Topic, msg string) error {
   res := topic.Publish(ctx, &pubsub.Message{Data: []byte(msg)})
   id, err := res.Get(ctx)
   if err != nil {
-    // TODO: エラー処理追加
     log.Printf("Error[publish]: %v", err)
     return err
   }
@@ -84,7 +76,7 @@ func publish(client *pubsub.Client, topic *pubsub.Topic, msg string) error {
   return nil
 }
 
-func createMessage(plugin *Plugin) (string, error) {
+func createMessage(plugin *protocol.Plugin) (string, error) {
   p := pingo.NewPlugin("tcp", plugin.Path)
   p.Start()
   defer p.Stop()
@@ -92,7 +84,6 @@ func createMessage(plugin *Plugin) (string, error) {
   var res string
   err := p.Call(plugin.Name + ".CreateMessage", plugin.Args, &res)
   if err != nil {
-    // TODO: エラー処理
     log.Printf("Error[getMessage] %v", err)
     return "", err
   }

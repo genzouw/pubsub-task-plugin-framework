@@ -2,6 +2,7 @@ package main
 
 import (
   "errors"
+  "log"
 
   "github.com/dullgiulio/pingo"
   "github.com/zenkigen/cloud-pubsub-utils/lib"
@@ -18,6 +19,16 @@ func (p *HelloPlugin) CreateMessage(args map[string]string, msg *string) error {
   if err != nil {
     return err
   }
+  return nil
+}
+
+func (p *HelloPlugin) Exec(args map[string]string, res *string) error {
+  err := checkArgument(args)
+  if err != nil {
+    return err
+  }
+  log.Printf("Hello " + args["name"])
+  *res = "Hello, " + args["name"]
   return nil
 }
 

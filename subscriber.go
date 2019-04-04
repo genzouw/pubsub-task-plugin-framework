@@ -11,6 +11,8 @@ import (
 
   "cloud.google.com/go/pubsub"
   "google.golang.org/api/iterator"
+  "github.com/dullgiulio/pingo"
+  "github.com/zenkigen/cloud-pubsub-utils/lib"
 )
 
 func main() {
@@ -87,7 +89,6 @@ func createSubscriptionIfNotExists(proj string, client *pubsub.Client, subName s
   }
   var sub *pubsub.Subscription
   for _, s := range subs {
-    log.Printf("... listing subscription: %v", s)
     if s.String() == "projects/" + proj + "/subscriptions/" + subName {
       sub = s
     }
@@ -109,7 +110,7 @@ func createSubscriptionIfNotExists(proj string, client *pubsub.Client, subName s
 
 func pullMessages(sub *pubsub.Subscription, concurrency int) error {
   ctx := context.Background()
-  ch := make(chan string, concurrency)
+  ch := make(chan []byte, concurrency)
   wg := sync.WaitGroup{}
   defer close(ch)
 
@@ -117,20 +118,23 @@ func pullMessages(sub *pubsub.Subscription, concurrency int) error {
   err := sub.Receive(cctx, func(ctx context.Context, msg *pubsub.Message) {
      msg.Ack()
      log.Printf("Got Message: %v", string(msg.Data))
-     // TODO: 特殊なメッセージを受信したら Receive を cancel する仕組み入れる
-     if string(msg.Data) == "cancel" {
+     // StopMessage を受け取ったら Receive を cancel する
+     err := protocol.ParseStopMessage(msg.Data)
+     if err == nil {
+       log.Printf("Received stop command")
        cancel()
+       return
      }
-     ch <- string(msg.Data)
+     ch <- msg.Data
      log.Printf("Send to goroutine: %v", string(msg.Data))
      wg.Add(1)
      go doPlugin(ch, &wg)
   })
+  // エラーに関わらず、goroutine が完了するのを待つ
+  wg.Wait()
   if err != nil {
     log.Printf("Error[pullMessage] %v", err)
     log.Printf("Waiting for finishing goroutine...")
-    wg.Wait()
-    // TODO: エラー処理追加
     return err
   }
   return nil
@@ -150,10 +154,29 @@ func deleteSubscription(client *pubsub.Client, sub *pubsub.Subscription) error {
   return nil
 }
 
-func doPlugin(ch <-chan string, wg *sync.WaitGroup) {
+func doPlugin(ch <-chan []byte, wg *sync.WaitGroup) {
   v, ok := <-ch
-  if ok {
-    log.Printf("[Exec] message: %v", v)
+  defer wg.Done()
+  if !ok {
+    log.Printf("Error[doPlugin] failed to fetch from channel")
+    return
   }
-  wg.Done()
+  plugin, err := protocol.ParsePluginMessage(v, "./plugins")
+  if err != nil {
+    log.Printf("Error[doPlugin] unknown message: %v", err)
+    return
+  }
+
+  p := pingo.NewPlugin("tcp", plugin.Path)
+  p.Start()
+  defer p.Stop()
+
+  var res string
+  err = p.Call(plugin.Name + ".Exec", plugin.Args, &res)
+  if err != nil {
+    log.Printf("Error[doPlugin] %v", err)
+    return
+  }
+  log.Printf("Plugin done: %v", res)
+  return
 }
