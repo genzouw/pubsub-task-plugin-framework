@@ -1,12 +1,10 @@
-//package publisher
-package main
+package pubsubJobExec
 
 import (
   "context"
   "log"
   "os"
   "sync"
-  "strconv"
   "time"
 
   "cloud.google.com/go/pubsub"
@@ -15,18 +13,11 @@ import (
   "github.com/zenkigen/cloud-pubsub-utils/lib"
 )
 
-func main() {
-  proj := os.Getenv("GOOGLE_PROJECT_ID")
-  if proj == "" {
-    log.Printf("GOOGLE_PROJECT_ID is not set. ERR:[%v]", os.Stderr)
-    os.Exit(1)
-  }
-  concurrency, _ := strconv.Atoi(os.Getenv("SUBSCIBER_CONCURRENCY"))
-  concurrency = 3
-  Do(proj, "test", "test-sub", concurrency)
+type Subscriber struct {
+  PluginDir string
 }
 
-func Do(proj string, topicName string, subName string, concurrency int) {
+func (s *Subscriber) Do(proj string, topicName string, subName string, concurrency int) {
   ctx := context.Background()
   client, err := pubsub.NewClient(ctx, proj)
 
@@ -44,7 +35,7 @@ func Do(proj string, topicName string, subName string, concurrency int) {
   defer deleteSubscription(client, sub)
 
   // pull message
-  if err := pullMessages(sub, concurrency); err != nil {
+  if err := pullMessages(sub, concurrency, s.PluginDir); err != nil {
     os.Exit(1)
   }
 }
@@ -108,7 +99,7 @@ func createSubscriptionIfNotExists(proj string, client *pubsub.Client, subName s
   return sub, nil
 }
 
-func pullMessages(sub *pubsub.Subscription, concurrency int) error {
+func pullMessages(sub *pubsub.Subscription, concurrency int, dir string) error {
   ctx := context.Background()
   ch := make(chan []byte, concurrency)
   wg := sync.WaitGroup{}
@@ -128,7 +119,7 @@ func pullMessages(sub *pubsub.Subscription, concurrency int) error {
      ch <- msg.Data
      log.Printf("Send to goroutine: %v", string(msg.Data))
      wg.Add(1)
-     go doPlugin(ch, &wg)
+     go doPlugin(ch, dir, &wg)
   })
   // エラーに関わらず、goroutine が完了するのを待つ
   wg.Wait()
@@ -154,14 +145,14 @@ func deleteSubscription(client *pubsub.Client, sub *pubsub.Subscription) error {
   return nil
 }
 
-func doPlugin(ch <-chan []byte, wg *sync.WaitGroup) {
+func doPlugin(ch <-chan []byte, dir string, wg *sync.WaitGroup) {
   v, ok := <-ch
   defer wg.Done()
   if !ok {
     log.Printf("Error[doPlugin] failed to fetch from channel")
     return
   }
-  plugin, err := protocol.ParsePluginMessage(v, "./plugins")
+  plugin, err := protocol.ParsePluginMessage(v, dir)
   if err != nil {
     log.Printf("Error[doPlugin] unknown message: %v", err)
     return
@@ -177,6 +168,6 @@ func doPlugin(ch <-chan []byte, wg *sync.WaitGroup) {
     log.Printf("Error[doPlugin] %v", err)
     return
   }
-  log.Printf("Plugin done: %v", res)
+  log.Printf("Plugin done")
   return
 }

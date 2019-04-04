@@ -1,27 +1,31 @@
-//package publisher
-package main
+package pubsubJobExec
 
 import (
   "context"
+  "errors"
   "log"
   "os"
 
   "cloud.google.com/go/pubsub"
   "github.com/dullgiulio/pingo"
-  "github.com/zenkigen/cloud-pubsub-utils/lib"
 )
 
-func main() {
-  proj := os.Getenv("GOOGLE_PROJECT_ID")
-  if proj == "" {
-    log.Printf("GOOGLE_PROJECT_ID is not set. ERR:[%v]", os.Stderr)
-    os.Exit(1)
-  }
-  plugin := protocol.Plugin{"HelloPlugin", "./plugins/hello", map[string]string{"name": "Yoshimo"}}
-  Do(proj, "test", &plugin)
+type Publisher struct {}
+
+type Plugin struct {
+  Name string
+  Path string
+  Args map[string]string
 }
 
-func Do(proj string, topicName string, plugin *protocol.Plugin) {
+func (p *Publisher) NewPlugin(name string, path string, args map[string]string) (*Plugin, error) {
+  if name == "" || path == "" {
+    return nil, errors.New("empty name or path of plugin")
+  }
+  return &Plugin{name, path, args}, nil
+}
+
+func (p *Publisher) Do(proj string, topicName string, plugin *Plugin) {
   ctx := context.Background()
   client, err := pubsub.NewClient(ctx, proj)
 
@@ -76,7 +80,7 @@ func publish(client *pubsub.Client, topic *pubsub.Topic, msg string) error {
   return nil
 }
 
-func createMessage(plugin *protocol.Plugin) (string, error) {
+func createMessage(plugin *Plugin) (string, error) {
   p := pingo.NewPlugin("tcp", plugin.Path)
   p.Start()
   defer p.Stop()
