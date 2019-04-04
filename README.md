@@ -50,8 +50,9 @@ pub/sub メッセージを生成します。
 
 たいていの場合、サンプルの HelloPlugin (./plugin/hello.go) と同じ実装で問題ないはずです。
 
-## Exec(args map[string]string) error
+## Exec(args map[string]string, res *string) error
 
 subscriber で実行するタスクを実装します。
 
 * args: publisher から指定された引数です
+* res: Exec のレスポンスを指定しますが、現状は利用していないので無視して構いません
