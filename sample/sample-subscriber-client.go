@@ -5,7 +5,7 @@ import (
   "os"
   "strconv"
 
-  "github.com/zenkigen/cloud-pubsub-utils"
+  "github.com/zenkigen/pubsub-task-plugin-framework"
 )
 
 func main() {
@@ -18,6 +18,6 @@ func main() {
   if err != nil || concurrency == 0 {
     concurrency = 3
   }
-  subscriber := &pubsubJobExec.Subscriber{"./sample-plugins"}
+  subscriber := &pubsubTaskPlugin.Subscriber{"./sample-plugins"}
   subscriber.Do(proj, "test-topic", "test-subscription", concurrency)
 }

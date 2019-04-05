@@ -5,7 +5,7 @@ import (
   "log"
 
   "github.com/dullgiulio/pingo"
-  "github.com/zenkigen/cloud-pubsub-utils/lib"
+  "github.com/zenkigen/pubsub-task-plugin-framework"
 )
 
 type HelloPlugin struct {}
@@ -15,7 +15,7 @@ func (p *HelloPlugin) CreateMessage(args map[string]string, msg *string) error {
   if err != nil {
     return err
   }
-  *msg, err = protocol.ComposePluginMessage("HelloPlugin", "hello", args)
+  *msg, err = pubsubTaskPlugin.ComposePluginMessage("HelloPlugin", "hello", args)
   if err != nil {
     return err
   }

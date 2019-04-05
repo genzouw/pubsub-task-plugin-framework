@@ -1,4 +1,4 @@
-package pubsubJobExec
+package pubsubTaskPlugin
 
 import (
   "context"
@@ -11,12 +11,6 @@ import (
 )
 
 type Publisher struct {}
-
-type Plugin struct {
-  Name string
-  Path string
-  Args map[string]string
-}
 
 func (p *Publisher) NewPlugin(name string, path string, args map[string]string) (*Plugin, error) {
   if name == "" || path == "" {

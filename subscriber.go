@@ -1,4 +1,4 @@
-package pubsubJobExec
+package pubsubTaskPlugin
 
 import (
   "context"
@@ -10,7 +10,6 @@ import (
   "cloud.google.com/go/pubsub"
   "google.golang.org/api/iterator"
   "github.com/dullgiulio/pingo"
-  "github.com/zenkigen/cloud-pubsub-utils/lib"
 )
 
 type Subscriber struct {
@@ -110,7 +109,7 @@ func pullMessages(sub *pubsub.Subscription, concurrency int, dir string) error {
      msg.Ack()
      log.Printf("Got Message: %v", string(msg.Data))
      // StopMessage を受け取ったら Receive を cancel する
-     err := protocol.ParseStopMessage(msg.Data)
+     err := ParseStopMessage(msg.Data)
      if err == nil {
        log.Printf("Received stop command")
        cancel()
@@ -152,7 +151,7 @@ func doPlugin(ch <-chan []byte, dir string, wg *sync.WaitGroup) {
     log.Printf("Error[doPlugin] failed to fetch from channel")
     return
   }
-  plugin, err := protocol.ParsePluginMessage(v, dir)
+  plugin, err := ParsePluginMessage(v, dir)
   if err != nil {
     log.Printf("Error[doPlugin] unknown message: %v", err)
     return

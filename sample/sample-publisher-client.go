@@ -4,7 +4,7 @@ import (
   "log"
   "os"
 
-  "github.com/zenkigen/cloud-pubsub-utils"
+  "github.com/zenkigen/pubsub-task-plugin-framework"
 )
 
 func main() {
@@ -14,7 +14,7 @@ func main() {
     os.Exit(1)
   }
 
-  publisher := &pubsubJobExec.Publisher{}
+  publisher := &pubsubTaskPlugin.Publisher{}
   plugin, err := publisher.NewPlugin("HelloPlugin", "./sample-plugins/hello", map[string]string{"name": "Yoshimo"})
   if err != nil {
     log.Printf("Error[main] %v", err)

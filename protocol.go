@@ -3,7 +3,7 @@
  * protocol の内部実装 (message の形式) を隠蔽する
  * TODO: うまく隠蔽できていないので、デザインパターンを再検討する
  */
-package protocol
+package pubsubTaskPlugin
 
 import (
   "errors"
@@ -30,7 +30,7 @@ type Message struct {
   Args    map[string]string `json:"args"`
 }
 
-// [For publisher]
+// [For publisher/plugin]
 // subscriber にプラグインを実行させるメッセージを作成する
 func ComposePluginMessage(name string, binName string, args map[string]string) (string, error) {
   json := simplejson.New()
