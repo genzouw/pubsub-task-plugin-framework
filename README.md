@@ -1,4 +1,4 @@
-# cloud-pubsub-utils
+# pubsub-task-plugin-framework
 
 Cloud pub/sub を利用した並列分散型のタスク実行フレームワークです。
 タスクは Plugin で管理することが可能で、publisher から subscriber で実行するプラグインを指定することが出来ます。
@@ -24,7 +24,7 @@ Cloud pub/sub を利用した並列分散型のタスク実行フレームワー
 setup environment
 
 ```
-$ git clone git@github.com:zenkigen/cloud-pubsub-utils.git
+$ git clone git@github.com:zenkigen/pubsub-task-plugin-framework.git
 $ export GOOGLE_PROJECT_ID="xxxx"
 ```
 
@@ -34,7 +34,7 @@ get libraries
 $ go get cloud.google.com/go/pubsub
 $ go get google.golang.org/api/iterator
 $ go get github.com/dullgiulio/pingo
-$ go get github.com/zenkigen/cloud-pubsub-utils
+$ go get github.com/zenkigen/pubsub-task-plugin-framework
 ```
 
 # Implement of your plugin
