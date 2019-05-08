@@ -1,4 +1,4 @@
-package pubsubTaskPlugin
+package pubsubtaskplugin
 
 import (
 	"context"
