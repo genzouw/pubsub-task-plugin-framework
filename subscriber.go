@@ -109,6 +109,7 @@ func pullMessages(sub *pubsub.Subscription, concurrency int, dir string) error {
 	wg := sync.WaitGroup{}
 	defer close(ch)
 
+	log.Printf("Concurrency: %v", len(ch))
 	cctx, cancel := context.WithCancel(ctx)
 	err := sub.Receive(cctx, func(ctx context.Context, msg *pubsub.Message) {
 		msg.Ack()
@@ -121,9 +122,9 @@ func pullMessages(sub *pubsub.Subscription, concurrency int, dir string) error {
 			return
 		}
 		ch <- msg.Data
-		log.Printf("Send to goroutine: %v", string(msg.Data))
+		log.Printf("Send to goroutine: len(ch) = %v", len(ch))
 		wg.Add(1)
-		go doPlugin(ch, dir, &wg)
+		go doPlugin(ch, dir, &wg, msg.Data)
 	})
 	// エラーに関わらず、goroutine が完了するのを待つ
 	wg.Wait()
@@ -149,14 +150,10 @@ func deleteSubscription(client *pubsub.Client, sub *pubsub.Subscription) error {
 	return nil
 }
 
-func doPlugin(ch <-chan []byte, dir string, wg *sync.WaitGroup) {
-	v, ok := <-ch
+func doPlugin(ch <-chan []byte, dir string, wg *sync.WaitGroup, msg []byte) {
 	defer wg.Done()
-	if !ok {
-		log.Printf("Error[doPlugin] failed to fetch from channel")
-		return
-	}
-	plugin, err := ParsePluginMessage(v, dir)
+	defer func() { <-ch }()
+	plugin, err := ParsePluginMessage(msg, dir)
 	if err != nil {
 		log.Printf("Error[doPlugin] unknown message: %v", err)
 		return

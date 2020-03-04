@@ -26,24 +26,28 @@ func (p *Publisher) Do(proj string, topicName string, plugin *Plugin) {
 	ctx := context.Background()
 	client, err := pubsub.NewClient(ctx, proj)
 	if err != nil {
+		log.Printf("error %v", err)
 		os.Exit(1)
 	}
 
 	// create a new topic if not exists
 	topic, err := createTopicIfNotExits(client, topicName)
 	if err != nil {
+		log.Printf("error %v", err)
 		os.Exit(1)
 	}
 
 	// create a pub/sub message from plugin
 	msg, err := createMessage(plugin)
 	if err != nil {
+		log.Printf("error %v", err)
 		os.Exit(1)
 	}
 
 	// publish a message
 	err = publish(client, topic, msg)
 	if err != nil {
+		log.Printf("error %v", err)
 		os.Exit(1)
 	}
 }
