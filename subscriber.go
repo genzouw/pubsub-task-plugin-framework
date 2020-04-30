@@ -3,7 +3,6 @@ package pubsubtaskplugin
 import (
 	"context"
 	"log"
-	"os"
 	"sync"
 	"time"
 
@@ -46,7 +45,7 @@ func (s *Subscriber) Do(proj string, topicName string, subName string, concurren
 	client, err := pubsub.NewClient(ctx, proj)
 	if err != nil {
 		log.Printf("Failed to new client (err=%v)", err)
-    return err
+		return err
 	}
 
 	// create a new topic if not exist
@@ -72,7 +71,7 @@ func (s *Subscriber) Do(proj string, topicName string, subName string, concurren
 		return err
 	}
 
-  return nil
+	return nil
 }
 
 func createTopicIfNotExists(client *pubsub.Client, topicName string) (*pubsub.Topic, error) {
