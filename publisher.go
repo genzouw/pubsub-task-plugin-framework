@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log"
-	"os"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/dullgiulio/pingo"
@@ -22,41 +21,42 @@ func (p *Publisher) NewPlugin(name string, path string, args map[string]string) 
 }
 
 // Do Publisher plugin
-func (p *Publisher) Do(proj string, topicName string, plugin *Plugin) {
+func (p *Publisher) Do(proj string, topicName string, plugin *Plugin) error {
 	ctx := context.Background()
 	client, err := pubsub.NewClient(ctx, proj)
 	if err != nil {
 		log.Printf("error %v", err)
-		os.Exit(1)
+		return err
 	}
 
 	// create a new topic if not exists
 	topic, err := createTopicIfNotExits(client, topicName)
 	if err != nil {
 		log.Printf("error %v", err)
-		os.Exit(1)
+		return err
 	}
 
 	// create a pub/sub message from plugin
 	msg, err := createMessage(plugin)
 	if err != nil {
 		log.Printf("error %v", err)
-		os.Exit(1)
+		return err
 	}
 
 	// publish a message
 	err = publish(client, topic, msg)
 	if err != nil {
 		log.Printf("error %v", err)
-		os.Exit(1)
+		return err
 	}
 
 	// close client
 	err = client.Close()
 	if err != nil {
 		log.Printf("close error %v", err)
-		os.Exit(1)
+		return err
 	}
+	return nil
 }
 
 func createTopicIfNotExits(client *pubsub.Client, topicName string) (*pubsub.Topic, error) {
