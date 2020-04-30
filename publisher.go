@@ -50,6 +50,13 @@ func (p *Publisher) Do(proj string, topicName string, plugin *Plugin) {
 		log.Printf("error %v", err)
 		os.Exit(1)
 	}
+
+	// close client
+	err = client.Close()
+	if err != nil {
+		log.Printf("close error %v", err)
+		os.Exit(1)
+	}
 }
 
 func createTopicIfNotExits(client *pubsub.Client, topicName string) (*pubsub.Topic, error) {
