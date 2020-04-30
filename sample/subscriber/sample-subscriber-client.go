@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	pubsubtaskplugin "github.com/zenkigen/pubsub-task-plugin-framework"
 )
@@ -19,5 +20,15 @@ func main() {
 		concurrency = 3
 	}
 	subscriber := &pubsubtaskplugin.Subscriber{PluginDir: "../plugins"}
+	go getChannel(subscriber)
 	subscriber.Do(proj, "test-topic", "test-subscription", concurrency)
+}
+
+func getChannel(s *pubsubtaskplugin.Subscriber) {
+	for true {
+		time.Sleep(2 * time.Second)
+		chLen := s.GetChannelLength()
+		chCap := s.GetChannelCapacity()
+		log.Printf("[ChannelMonitor] chLen=(%d) chCap=(%d)", chLen, chCap)
+	}
 }
