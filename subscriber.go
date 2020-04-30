@@ -17,31 +17,62 @@ type Subscriber struct {
 	PluginDir string
 }
 
+var mu sync.RWMutex
+var ch chan []byte
+
+// GetChannelLength length of channel in subscriber
+func (s *Subscriber) GetChannelLength() int {
+	mu.RLock()
+	defer mu.RUnlock()
+	if ch == nil {
+		return 0
+	}
+	return len(ch)
+}
+
+// GetChannelCapacity capacity of channel in subscriber
+func (s *Subscriber) GetChannelCapacity() int {
+	mu.RLock()
+	defer mu.RUnlock()
+	if ch == nil {
+		return 0
+	}
+	return cap(ch)
+}
+
 // Do Subscriber plugin
-func (s *Subscriber) Do(proj string, topicName string, subName string, concurrency int) {
+func (s *Subscriber) Do(proj string, topicName string, subName string, concurrency int) error {
 	ctx := context.Background()
 	client, err := pubsub.NewClient(ctx, proj)
 	if err != nil {
-		os.Exit(1)
+		log.Printf("Failed to new client (err=%v)", err)
+    return err
 	}
 
 	// create a new topic if not exist
 	topic, err := createTopicIfNotExists(client, topicName)
 	if err != nil {
-		os.Exit(1)
+		log.Printf("Failed to create topic (err=%v)", err)
+		return err
 	}
 
 	// create a new subscription if not exists
 	sub, err := createSubscriptionIfNotExists(proj, client, subName, topic)
 	if err != nil {
-		os.Exit(1)
+		log.Printf("Failed to create subscription (err=%v)", err)
+		return err
 	}
 	defer deleteSubscription(client, sub)
 
 	// pull message
-	if err := pullMessages(sub, concurrency, s.PluginDir); err != nil {
-		os.Exit(1)
+	mu.Lock()
+	ch = make(chan []byte, concurrency)
+	mu.Unlock()
+	if err := pullMessages(sub, s.PluginDir); err != nil {
+		return err
 	}
+
+  return nil
 }
 
 func createTopicIfNotExists(client *pubsub.Client, topicName string) (*pubsub.Topic, error) {
@@ -103,9 +134,8 @@ func createSubscriptionIfNotExists(proj string, client *pubsub.Client, subName s
 	return sub, nil
 }
 
-func pullMessages(sub *pubsub.Subscription, concurrency int, dir string) error {
+func pullMessages(sub *pubsub.Subscription, dir string) error {
 	ctx := context.Background()
-	ch := make(chan []byte, concurrency)
 	wg := sync.WaitGroup{}
 	defer close(ch)
 
